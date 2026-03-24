@@ -52,12 +52,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'robot_sap.wsgi.application'
 
-print(type(os.environ.get("DATABASE_URL")))
-print(os.environ.get("DATABASE_URL"))
-
 DATABASES = {
     'default': dj_database_url.parse(
-        os.environ.get("DATABASE_URL", "sqlite:///db.sqlite3")
+        os.environ.get("DATABASE_URL")
     )
 }
 
