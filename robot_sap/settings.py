@@ -52,11 +52,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'robot_sap.wsgi.application'
 
-DATABASES = {
-    'default': dj_database_url.parse(
-        os.environ.get("DATABASE_URL")
-    )
-}
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL)
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -108,3 +116,9 @@ CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+import os
+
+if os.environ.get("IMPORT_DATA") == "True":
+    from django.core.management import call_command
+    call_command('loaddata', 'dados.json')
