@@ -196,7 +196,6 @@ def exportar_robots_excel(request):
     )
     response['Content-Disposition'] = 'attachment; filename="gestao_ativos_robotica.xlsx"'
     return response
-<<<<<<< HEAD
 
 
 import json
@@ -389,5 +388,3 @@ def confirmar_importacao_excel(request):
         'ignorados': ignorados,
         'erros': erros,
     }), content_type='application/json')
-=======
->>>>>>> 128227ac9c24a04d992f428b18ef235fe6a2c1b6

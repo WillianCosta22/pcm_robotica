@@ -10,9 +10,6 @@ urlpatterns = [
     path('<int:pk>/editar/', views.RobotUpdateView.as_view(), name='update'),
     path('<int:pk>/excluir/', views.RobotDeleteView.as_view(), name='delete'),
     path('exportar/excel/', views.exportar_robots_excel, name='export_excel'),
-<<<<<<< HEAD
     path('importar/preview/', views.preview_importacao_excel, name='import_preview'),
     path('importar/confirmar/', views.confirmar_importacao_excel, name='import_confirm'),
-=======
->>>>>>> 128227ac9c24a04d992f428b18ef235fe6a2c1b6
 ]

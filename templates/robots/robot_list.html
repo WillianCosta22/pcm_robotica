@@ -9,14 +9,10 @@
         <p class="text-muted mb-0 small">{{ total }} ativo(s) no sistema</p>
     </div>
     {% if request.user.is_staff or request.user.is_superuser %}
-<<<<<<< HEAD
     <div class="d-flex gap-2 flex-wrap">
         <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalImportar">
             <i class="bi bi-file-earmark-arrow-up me-1"></i>Importar Excel
         </button>
-=======
-    <div class="d-flex gap-2">
->>>>>>> 128227ac9c24a04d992f428b18ef235fe6a2c1b6
         <a href="{% url 'robots:export_excel' %}" class="btn btn-outline-success btn-sm">
             <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
         </a>
@@ -41,20 +37,10 @@
     </div>
 </div>
 
-<<<<<<< HEAD
 {% if request.GET.status %}
 <div class="mb-3">
     <span class="badge bg-primary fs-6 py-2 px-3">
         <i class="bi bi-funnel me-1"></i>Filtro ativo: <strong>{{ request.GET.status }}</strong>
-=======
-<!-- Filtro ativo -->
-{% if request.GET.status %}
-<div class="mb-3">
-    <span class="badge bg-primary fs-6 py-2 px-3">
-        <i class="bi bi-funnel me-1"></i>
-        Filtrando: {{ filter_form.status.field.choices|dictsort:"0" }}
-        Filtro ativo: <strong>{{ request.GET.status }}</strong>
->>>>>>> 128227ac9c24a04d992f428b18ef235fe6a2c1b6
         <a href="{% url 'robots:list' %}" class="ms-2 text-white"><i class="bi bi-x-circle"></i></a>
     </span>
 </div>
@@ -87,68 +73,28 @@
                         {% else %}<span class="text-muted">—</span>{% endif %}
                     </td>
                     <td>
-<<<<<<< HEAD
                         <a href="{% url 'robots:detail' robot.pk %}" class="text-decoration-none fw-semibold">{{ robot.nome }}</a>
                         {% if robot.modelo %}<div class="text-muted small">{{ robot.modelo }}</div>{% endif %}
                     </td>
                     <td>
                         {% if robot.numero_serie %}<code class="text-secondary small">{{ robot.numero_serie }}</code>
-=======
-                        <a href="{% url 'robots:detail' robot.pk %}" class="text-decoration-none fw-semibold">
-                            {{ robot.nome }}
-                        </a>
-                        {% if robot.modelo %}
-                        <div class="text-muted small">{{ robot.modelo }}</div>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if robot.numero_serie %}
-                        <code class="text-secondary small">{{ robot.numero_serie }}</code>
->>>>>>> 128227ac9c24a04d992f428b18ef235fe6a2c1b6
                         {% else %}<span class="text-muted">—</span>{% endif %}
                     </td>
                     <td class="text-muted small">{{ robot.grupo|default:"—" }}</td>
                     <td class="text-muted small">{{ robot.alocacao|default:"—" }}</td>
-<<<<<<< HEAD
                     <td><span class="badge bg-{{ robot.get_status_color }}">{{ robot.get_status_operacional_display }}</span></td>
                     <td class="text-muted small">
                         {% with ultima=robot.ultima_manutencao %}
                             {% if ultima %}{{ ultima.data_conclusao|date:"d/m/Y" }}{% else %}—{% endif %}
-=======
-                    <td>
-                        <span class="badge bg-{{ robot.get_status_color }}">
-                            {{ robot.get_status_operacional_display }}
-                        </span>
-                    </td>
-                    <td class="text-muted small">
-                        {% with ultima=robot.ultima_manutencao %}
-                            {% if ultima %}{{ ultima.data_conclusao|date:"d/m/Y" }}
-                            {% else %}—{% endif %}
->>>>>>> 128227ac9c24a04d992f428b18ef235fe6a2c1b6
                         {% endwith %}
                     </td>
                     {% if request.user.is_staff or request.user.is_superuser %}
                     <td class="text-center">
                         <div class="btn-group btn-group-sm">
-<<<<<<< HEAD
                             <a href="{% url 'robots:detail' robot.pk %}" class="btn btn-outline-primary" title="Detalhes"><i class="bi bi-eye"></i></a>
                             <a href="{% url 'robots:update' robot.pk %}" class="btn btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
                             <a href="{% url 'manutencoes:create' %}?robo={{ robot.pk }}" class="btn btn-outline-warning" title="Abrir manutenção"><i class="bi bi-tools"></i></a>
                             <a href="{% url 'robots:delete' robot.pk %}" class="btn btn-outline-danger" title="Excluir"><i class="bi bi-trash"></i></a>
-=======
-                            <a href="{% url 'robots:detail' robot.pk %}" class="btn btn-outline-primary" title="Detalhes">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a href="{% url 'robots:update' robot.pk %}" class="btn btn-outline-secondary" title="Editar">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <a href="{% url 'manutencoes:create' %}?robo={{ robot.pk }}" class="btn btn-outline-warning" title="Abrir manutenção">
-                                <i class="bi bi-tools"></i>
-                            </a>
-                            <a href="{% url 'robots:delete' robot.pk %}" class="btn btn-outline-danger" title="Excluir">
-                                <i class="bi bi-trash"></i>
-                            </a>
->>>>>>> 128227ac9c24a04d992f428b18ef235fe6a2c1b6
                         </div>
                     </td>
                     {% endif %}
@@ -180,13 +126,7 @@
             </a>
         </li>
         {% endif %}
-<<<<<<< HEAD
         <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
-=======
-        <li class="page-item active">
-            <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-        </li>
->>>>>>> 128227ac9c24a04d992f428b18ef235fe6a2c1b6
         {% if page_obj.has_next %}
         <li class="page-item">
             <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
@@ -197,7 +137,6 @@
     </ul>
 </nav>
 {% endif %}
-<<<<<<< HEAD
 
 
 <!-- ═══════════════════════════════════════════
@@ -617,6 +556,4 @@
 </script>
 {% endif %}
 
-=======
->>>>>>> 128227ac9c24a04d992f428b18ef235fe6a2c1b6
 {% endblock %}
