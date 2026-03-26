@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}{{ robot.nome }}{% endblock %}
+{% block page_title %}Detalhes do Ativo{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4 gap-3 flex-wrap">
+    <a href="{% url 'robots:list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+    <h4 class="mb-0 fw-bold"><i class="bi bi-robot me-2 text-primary"></i>{{ robot.nome }}</h4>
+    <span class="badge bg-{{ robot.get_status_color }} fs-6">{{ robot.get_status_operacional_display }}</span>
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <div class="ms-auto d-flex gap-2">
+        <a href="{% url 'robots:update' robot.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Editar</a>
+        <a href="{% url 'manutencoes:create' %}?robo={{ robot.pk }}" class="btn btn-warning btn-sm"><i class="bi bi-tools me-1"></i>Abrir Manutenção</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card">
+            {% if robot.imagem %}
+            <img src="{{ robot.imagem.url }}" class="card-img-top" style="height:200px;object-fit:cover;">
+            {% else %}
+            <div class="bg-light d-flex align-items-center justify-content-center" style="height:160px;">
+                <i class="bi bi-robot text-muted opacity-25" style="font-size:4rem;"></i>
+            </div>
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ robot.nome }}</h5>
+                {% if robot.modelo %}<p class="text-muted mb-3">{{ robot.modelo }}</p>{% endif %}
+                <hr>
+                <dl class="row small mb-0">
+                    {% if robot.patrimonio %}
+                    <dt class="col-5 text-muted">Patrimônio</dt>
+                    <dd class="col-7"><code class="text-primary fw-bold">{{ robot.patrimonio }}</code></dd>
+                    {% endif %}
+                    {% if robot.numero_serie %}
+                    <dt class="col-5 text-muted">Ativo</dt>
+                    <dd class="col-7"><code>{{ robot.numero_serie }}</code></dd>
+                    {% endif %}
+                    {% if robot.fabricante %}
+                    <dt class="col-5 text-muted">Fabricante</dt>
+                    <dd class="col-7">{{ robot.fabricante }}</dd>
+                    {% endif %}
+                    {% if robot.grupo %}
+                    <dt class="col-5 text-muted">Grupo</dt>
+                    <dd class="col-7">{{ robot.grupo }}</dd>
+                    {% endif %}
+                    {% if robot.alocacao %}
+                    <dt class="col-5 text-muted">Alocação</dt>
+                    <dd class="col-7">{{ robot.alocacao }}</dd>
+                    {% endif %}
+                    {% if robot.localizacao %}
+                    <dt class="col-5 text-muted">Localização</dt>
+                    <dd class="col-7">{{ robot.localizacao }}</dd>
+                    {% endif %}
+                    {% if robot.ano_fabricacao %}
+                    <dt class="col-5 text-muted">Ano Fab.</dt>
+                    <dd class="col-7">{{ robot.ano_fabricacao }}</dd>
+                    {% endif %}
+                    {% if robot.data_aquisicao %}
+                    <dt class="col-5 text-muted">Aquisição</dt>
+                    <dd class="col-7">{{ robot.data_aquisicao|date:"d/m/Y" }}</dd>
+                    {% endif %}
+                </dl>
+                {% if robot.documento_tecnico %}
+                <hr>
+                <a href="{{ robot.documento_tecnico.url }}" class="btn btn-outline-secondary btn-sm w-100" target="_blank">
+                    <i class="bi bi-file-earmark-text me-1"></i>Documento Técnico
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        {% if robot.observacoes %}
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-chat-text me-2"></i>Observações</div>
+            <div class="card-body text-muted">{{ robot.observacoes }}</div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span><i class="bi bi-tools me-2 text-warning"></i>Histórico de Manutenções</span>
+                {% if request.user.is_staff or request.user.is_superuser %}
+                <a href="{% url 'manutencoes:create' %}?robo={{ robot.pk }}" class="btn btn-sm btn-warning">
+                    <i class="bi bi-plus"></i>
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 small">
+                    <thead class="table-light">
+                        <tr><th>Data</th><th>Tipo</th><th>Técnico</th><th>Status</th><th>Custo</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                    {% for m in manutencoes %}
+                    <tr>
+                        <td>{{ m.data_abertura|date:"d/m/Y" }}</td>
+                        <td><span class="badge bg-secondary">{{ m.get_tipo_manutencao_display }}</span></td>
+                        <td>{{ m.tecnico.nome|default:"—" }}</td>
+                        <td><span class="badge bg-{{ m.get_status_color }}">{{ m.get_status_display }}</span></td>
+                        <td>{% if m.custo %}R$ {{ m.custo|floatformat:2 }}{% else %}—{% endif %}</td>
+                        <td><a href="{% url 'manutencoes:detail' m.pk %}" class="btn btn-sm btn-outline-primary py-0 px-1"><i class="bi bi-eye"></i></a></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted py-3">Nenhuma manutenção registrada</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

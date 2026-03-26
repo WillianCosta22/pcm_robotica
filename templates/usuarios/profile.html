@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Meu Perfil{% endblock %}
+{% block page_title %}Meu Perfil{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold mx-auto mb-3"
+                     style="width:80px;height:80px;font-size:2rem;">
+                    {{ request.user.username|first|upper }}
+                </div>
+                <h5>{{ request.user.get_full_name|default:request.user.username }}</h5>
+                <p class="text-muted">{{ request.user.email }}</p>
+                <hr>
+                <dl class="row text-start">
+                    <dt class="col-5 text-muted">Usuário</dt>
+                    <dd class="col-7">{{ request.user.username }}</dd>
+                    <dt class="col-5 text-muted">Data de cadastro</dt>
+                    <dd class="col-7">{{ request.user.date_joined|date:"d/m/Y" }}</dd>
+                    <dt class="col-5 text-muted">Último acesso</dt>
+                    <dd class="col-7">{{ request.user.last_login|date:"d/m/Y H:i" }}</dd>
+                    <dt class="col-5 text-muted">Permissões</dt>
+                    <dd class="col-7">
+                        {% if request.user.is_superuser %}
+                        <span class="badge bg-danger">Administrador</span>
+                        {% elif request.user.is_staff %}
+                        <span class="badge bg-warning text-dark">Staff</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Usuário</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

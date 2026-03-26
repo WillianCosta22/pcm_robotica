@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}{{ tecnico.nome }}{% endblock %}
+{% block page_title %}Técnico{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center mb-4 gap-3">
+    <a href="{% url 'tecnicos:list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h4 class="mb-0 fw-bold"><i class="bi bi-person-gear me-2 text-success"></i>{{ tecnico.nome }}</h4>
+    {% if not tecnico.ativo %}<span class="badge bg-danger">Inativo</span>{% endif %}
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <div class="ms-auto">
+        <a href="{% url 'tecnicos:update' tecnico.pk %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-pencil me-1"></i>Editar
+        </a>
+    </div>
+    {% endif %}
+</div>
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold mx-auto mb-3"
+                     style="width:80px;height:80px;font-size:2rem;background:linear-gradient(135deg,#198754,#0fba70);">
+                    {{ tecnico.nome|first|upper }}
+                </div>
+                <h5>{{ tecnico.nome }}</h5>
+                <p class="text-muted mb-0">{{ tecnico.get_especialidade_display }}</p>
+                <hr>
+                {% if tecnico.matricula %}
+                <p class="mb-1 small"><i class="bi bi-person-badge me-1 text-muted"></i>Mat: {{ tecnico.matricula }}</p>
+                {% endif %}
+                {% if tecnico.email %}
+                <p class="mb-1 small"><i class="bi bi-envelope me-1 text-muted"></i>{{ tecnico.email }}</p>
+                {% endif %}
+                {% if tecnico.telefone %}
+                <p class="mb-0 small"><i class="bi bi-telephone me-1 text-muted"></i>{{ tecnico.telefone }}</p>
+                {% endif %}
+                {% if tecnico.usuario %}
+                <hr>
+                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    <i class="bi bi-key me-1"></i>Login: {{ tecnico.usuario.username }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-tools me-2 text-warning"></i>Manutenções Recentes</div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 small">
+                    <thead class="table-light"><tr><th>Data</th><th>Robô</th><th>Tipo</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                    {% for m in manutencoes %}
+                    <tr>
+                        <td>{{ m.data_abertura|date:"d/m/Y" }}</td>
+                        <td>{{ m.robo.nome }}</td>
+                        <td><span class="badge bg-secondary">{{ m.get_tipo_manutencao_display }}</span></td>
+                        <td><span class="badge bg-{{ m.get_status_color }}">{{ m.get_status_display }}</span></td>
+                        <td><a href="{% url 'manutencoes:detail' m.pk %}" class="btn btn-sm btn-outline-primary py-0 px-1"><i class="bi bi-eye"></i></a></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-3">Nenhuma manutenção</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

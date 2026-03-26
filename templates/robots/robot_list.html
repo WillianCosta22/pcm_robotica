@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% block title %}Robôs{% endblock %}
+{% block page_title %}Gestão de Robôs{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 fw-bold"><i class="bi bi-robot me-2 text-primary"></i>Robôs Cadastrados</h4>
+        <p class="text-muted mb-0 small">{{ total }} ativo(s) no sistema</p>
+    </div>
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <div class="d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalImportar">
+            <i class="bi bi-file-earmark-arrow-up me-1"></i>Importar Excel
+        </button>
+        <a href="{% url 'robots:export_excel' %}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+        </a>
+        <a href="{% url 'robots:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Cadastrar Robô
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Filtros -->
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-5">{{ filter_form.busca }}</div>
+            <div class="col-md-3">{{ filter_form.status }}</div>
+            <div class="col-md-3">{{ filter_form.localizacao }}</div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if request.GET.status %}
+<div class="mb-3">
+    <span class="badge bg-primary fs-6 py-2 px-3">
+        <i class="bi bi-funnel me-1"></i>Filtro ativo: <strong>{{ request.GET.status }}</strong>
+        <a href="{% url 'robots:list' %}" class="ms-2 text-white"><i class="bi bi-x-circle"></i></a>
+    </span>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patrimônio</th>
+                        <th>Nome / Modelo</th>
+                        <th>Ativo (Série)</th>
+                        <th>Grupo</th>
+                        <th>Alocação</th>
+                        <th>Status</th>
+                        <th>Últ. Manutenção</th>
+                        {% if request.user.is_staff or request.user.is_superuser %}
+                        <th class="text-center">Ações</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for robot in robots %}
+                <tr>
+                    <td>
+                        {% if robot.patrimonio %}
+                        <code class="text-primary fw-bold">{{ robot.patrimonio }}</code>
+                        {% else %}<span class="text-muted">—</span>{% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'robots:detail' robot.pk %}" class="text-decoration-none fw-semibold">{{ robot.nome }}</a>
+                        {% if robot.modelo %}<div class="text-muted small">{{ robot.modelo }}</div>{% endif %}
+                    </td>
+                    <td>
+                        {% if robot.numero_serie %}<code class="text-secondary small">{{ robot.numero_serie }}</code>
+                        {% else %}<span class="text-muted">—</span>{% endif %}
+                    </td>
+                    <td class="text-muted small">{{ robot.grupo|default:"—" }}</td>
+                    <td class="text-muted small">{{ robot.alocacao|default:"—" }}</td>
+                    <td><span class="badge bg-{{ robot.get_status_color }}">{{ robot.get_status_operacional_display }}</span></td>
+                    <td class="text-muted small">
+                        {% with ultima=robot.ultima_manutencao %}
+                            {% if ultima %}{{ ultima.data_conclusao|date:"d/m/Y" }}{% else %}—{% endif %}
+                        {% endwith %}
+                    </td>
+                    {% if request.user.is_staff or request.user.is_superuser %}
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'robots:detail' robot.pk %}" class="btn btn-outline-primary" title="Detalhes"><i class="bi bi-eye"></i></a>
+                            <a href="{% url 'robots:update' robot.pk %}" class="btn btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+                            <a href="{% url 'manutencoes:create' %}?robo={{ robot.pk }}" class="btn btn-outline-warning" title="Abrir manutenção"><i class="bi bi-tools"></i></a>
+                            <a href="{% url 'robots:delete' robot.pk %}" class="btn btn-outline-danger" title="Excluir"><i class="bi bi-trash"></i></a>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="bi bi-robot fs-1 d-block mb-2 opacity-25"></i>
+                        Nenhum robô encontrado.
+                        {% if request.user.is_staff or request.user.is_superuser %}
+                        <a href="{% url 'robots:create' %}">Cadastrar o primeiro</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if is_paginated %}
+<nav class="mt-3">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+        <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+
+<!-- ═══════════════════════════════════════════
+     MODAL DE IMPORTAÇÃO EXCEL
+     Passo 1: Upload  |  Passo 2: Pré-visualização  |  Passo 3: Resultado
+     ═══════════════════════════════════════════ -->
+{% if request.user.is_staff or request.user.is_superuser %}
+<div class="modal fade" id="modalImportar" tabindex="-1" aria-labelledby="modalImportarLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <!-- HEADER -->
+            <div class="modal-header" style="background:#151e2d;">
+                <h5 class="modal-title text-white" id="modalImportarLabel">
+                    <i class="bi bi-file-earmark-arrow-up me-2"></i>Importar Robôs via Excel
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-0">
+
+                <!-- ── PASSO 1: Upload ── -->
+                <div id="passo1" class="p-4">
+                    <div class="alert alert-info d-flex gap-3 align-items-start">
+                        <i class="bi bi-info-circle-fill fs-5 mt-1 flex-shrink-0"></i>
+                        <div>
+                            <strong>Como funciona:</strong> Envie um arquivo <code>.xlsx</code> com os dados dos robôs.
+                            O sistema vai exibir uma pré-visualização e você escolhe quais linhas importar.
+                            O arquivo deve seguir o mesmo formato do <strong>Exportar Excel</strong> —
+                            colunas: <em>ATIVO, PATRIMÔNIO, DENOMINAÇÃO, TIPO MNT, GRUPO, ALOCAÇÃO, STATUS, MODELO, FABRICANTE, LOCALIZAÇÃO, OBSERVAÇÕES</em>.
+                        </div>
+                    </div>
+
+                    <div id="dropzone"
+                         class="border border-2 border-dashed rounded-3 p-5 text-center"
+                         style="border-color:#0d6efd!important; background:#f8f9ff; cursor:pointer; transition:background .2s;">
+                        <i class="bi bi-cloud-upload fs-1 text-primary mb-3 d-block"></i>
+                        <p class="mb-2 fw-semibold">Arraste o arquivo aqui ou clique para selecionar</p>
+                        <p class="text-muted small mb-3">Somente arquivos <strong>.xlsx</strong></p>
+                        <label class="btn btn-primary">
+                            <i class="bi bi-folder2-open me-1"></i>Selecionar arquivo
+                            <input type="file" id="arquivoInput" accept=".xlsx" class="d-none">
+                        </label>
+                    </div>
+
+                    <div id="arquivoSelecionado" class="mt-3 d-none">
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3">
+                            <i class="bi bi-file-earmark-excel text-success fs-3"></i>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold" id="nomeArquivo"></div>
+                                <div class="text-muted small" id="tamanhoArquivo"></div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" id="btnRemoverArquivo">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="loadingPreview" class="text-center py-4 d-none">
+                        <div class="spinner-border text-primary" style="width:2rem;height:2rem;"></div>
+                        <p class="mt-2 text-muted">Lendo planilha…</p>
+                    </div>
+                    <div id="erroUpload" class="alert alert-danger mt-3 d-none"></div>
+                </div>
+
+                <!-- ── PASSO 2: Pré-visualização ── -->
+                <div id="passo2" class="d-none">
+                    <div class="p-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2"
+                         style="background:#f8f9fa;">
+                        <div>
+                            <span class="fw-semibold">Pré-visualização —</span>
+                            <span id="totalLinhas" class="text-muted"></span>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="switchSobrescrever">
+                                <label class="form-check-label small" for="switchSobrescrever">
+                                    Sobrescrever registros existentes
+                                </label>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary" id="btnSelecionarTodos">Selecionar todos</button>
+                                <button class="btn btn-outline-secondary" id="btnDeselecionarTodos">Nenhum</button>
+                                <button class="btn btn-outline-warning" id="btnSoNovos">Só novos</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x:auto; max-height:420px; overflow-y:auto;">
+                        <table class="table table-sm table-hover mb-0" id="tabelaPreview" style="font-size:.82rem; min-width:900px;">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th style="width:40px">
+                                        <input type="checkbox" id="checkAll" class="form-check-input" checked>
+                                    </th>
+                                    <th>Patrimônio</th>
+                                    <th>Ativo (Série)</th>
+                                    <th>Denominação / Nome</th>
+                                    <th>Grupo</th>
+                                    <th>Alocação</th>
+                                    <th>Status</th>
+                                    <th>Modelo</th>
+                                    <th>Situação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoPreview"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="p-3 border-top d-flex align-items-center gap-2 flex-wrap" style="background:#f8f9fa;">
+                        <span class="text-muted small">
+                            <span id="countSelecionados" class="fw-bold text-dark">0</span> linha(s) selecionada(s)
+                        </span>
+                        <button class="btn btn-outline-secondary btn-sm ms-auto" id="btnVoltarUpload">
+                            <i class="bi bi-arrow-left me-1"></i>Voltar
+                        </button>
+                        <button class="btn btn-primary btn-sm" id="btnConfirmarImport" disabled>
+                            <i class="bi bi-cloud-upload me-1"></i>Importar Selecionados
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ── PASSO 3: Resultado ── -->
+                <div id="passo3" class="d-none p-4">
+                    <div id="resultadoImport"></div>
+                </div>
+
+            </div><!-- /modal-body -->
+        </div>
+    </div>
+</div>
+
+<style>
+    #dropzone:hover, #dropzone.dragover { background: #e8f0ff !important; }
+    #tabelaPreview tbody tr.existe-conflito td { background: #fff8e1; }
+    #tabelaPreview tbody tr:has(input:not(:checked)) { opacity: .55; }
+    .badge-novo    { background:#d1e7dd; color:#0a3622; border:1px solid #a3cfbb; }
+    .badge-existe  { background:#fff3cd; color:#664d03; border:1px solid #ffe69c; }
+    .status-operacional  { color:#198754; font-weight:600; }
+    .status-em_manutencao{ color:#cc8400; font-weight:600; }
+    .status-parado       { color:#dc3545; font-weight:600; }
+    .status-inativo      { color:#6c757d; font-weight:600; }
+    .status-em_inspecao  { color:#0aa2c0; font-weight:600; }
+</style>
+
+<script>
+(function(){
+    const PREVIEW_URL  = "{% url 'robots:import_preview' %}";
+    const CONFIRM_URL  = "{% url 'robots:import_confirm' %}";
+    const CSRF         = "{{ csrf_token }}";
+
+    let linhasData = [];   // dados lidos do excel
+    let arquivoSelecionado = null;
+
+    // ── elementos ──
+    const passo1         = document.getElementById('passo1');
+    const passo2         = document.getElementById('passo2');
+    const passo3         = document.getElementById('passo3');
+    const arquivoInput   = document.getElementById('arquivoInput');
+    const dropzone       = document.getElementById('dropzone');
+    const arquivoInfo    = document.getElementById('arquivoSelecionado');
+    const nomeArquivo    = document.getElementById('nomeArquivo');
+    const tamanhoArquivo = document.getElementById('tamanhoArquivo');
+    const loadingPreview = document.getElementById('loadingPreview');
+    const erroUpload     = document.getElementById('erroUpload');
+    const corpoPreview   = document.getElementById('corpoPreview');
+    const totalLinhas    = document.getElementById('totalLinhas');
+    const countSel       = document.getElementById('countSelecionados');
+    const btnConfirmar   = document.getElementById('btnConfirmarImport');
+    const checkAll       = document.getElementById('checkAll');
+    const switchSobre    = document.getElementById('switchSobrescrever');
+
+    // STATUS display helper
+    const STATUS_CLASS = {
+        'operacional':'status-operacional','em_manutencao':'status-em_manutencao',
+        'parado':'status-parado','inativo':'status-inativo','em_inspecao':'status-em_inspecao'
+    };
+
+    // ── Drag & Drop ──
+    ['dragenter','dragover'].forEach(ev => dropzone.addEventListener(ev, e => {
+        e.preventDefault(); dropzone.classList.add('dragover');
+    }));
+    ['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => {
+        e.preventDefault(); dropzone.classList.remove('dragover');
+    }));
+    dropzone.addEventListener('drop', e => {
+        const f = e.dataTransfer.files[0];
+        if(f) handleArquivo(f);
+    });
+    arquivoInput.addEventListener('change', () => {
+        if(arquivoInput.files[0]) handleArquivo(arquivoInput.files[0]);
+    });
+
+    function handleArquivo(file) {
+        if(!file.name.endsWith('.xlsx')) {
+            mostrarErro('Por favor, selecione um arquivo <strong>.xlsx</strong>.');
+            return;
+        }
+        arquivoSelecionado = file;
+        nomeArquivo.textContent    = file.name;
+        tamanhoArquivo.textContent = (file.size/1024).toFixed(1) + ' KB';
+        arquivoInfo.classList.remove('d-none');
+        erroUpload.classList.add('d-none');
+        // Auto-enviar para preview imediatamente
+        enviarParaPreview(file);
+    }
+
+    document.getElementById('btnRemoverArquivo').addEventListener('click', () => {
+        arquivoSelecionado = null;
+        arquivoInput.value = '';
+        arquivoInfo.classList.add('d-none');
+        erroUpload.classList.add('d-none');
+    });
+
+    function enviarParaPreview(file) {
+        loadingPreview.classList.remove('d-none');
+        erroUpload.classList.add('d-none');
+
+        const fd = new FormData();
+        fd.append('arquivo', file);
+        fd.append('csrfmiddlewaretoken', CSRF);
+
+        fetch(PREVIEW_URL, { method:'POST', body:fd })
+            .then(r => r.json())
+            .then(data => {
+                loadingPreview.classList.add('d-none');
+                if(data.erro) { mostrarErro(data.erro); return; }
+                linhasData = data.linhas;
+                renderizarPreview(linhasData);
+                passo1.classList.add('d-none');
+                passo2.classList.remove('d-none');
+            })
+            .catch(err => {
+                loadingPreview.classList.add('d-none');
+                mostrarErro('Erro de comunicação: ' + err);
+            });
+    }
+
+    function renderizarPreview(linhas) {
+        corpoPreview.innerHTML = '';
+        totalLinhas.textContent = linhas.length + ' linha(s) encontrada(s)';
+
+        linhas.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            if(r.existe) tr.classList.add('existe-conflito');
+            const situacao = r.existe
+                ? `<span class="badge badge-existe"><i class="bi bi-exclamation-triangle me-1"></i>Já existe</span>`
+                : `<span class="badge badge-novo"><i class="bi bi-plus-circle me-1"></i>Novo</span>`;
+
+            const statusCls = STATUS_CLASS[r.status] || '';
+            tr.innerHTML = `
+                <td><input type="checkbox" class="form-check-input chk-linha" data-idx="${i}" ${r.existe ? '' : 'checked'}></td>
+                <td><code class="text-primary">${escH(r.patrimonio)||'—'}</code></td>
+                <td><code class="text-secondary">${escH(r.numero_serie)||'—'}</code></td>
+                <td class="fw-medium">${escH(r.nome)}</td>
+                <td class="text-muted">${escH(r.grupo)||'—'}</td>
+                <td class="text-muted">${escH(r.alocacao)||'—'}</td>
+                <td><span class="${statusCls}">${escH(r.status_display)}</span></td>
+                <td class="text-muted">${escH(r.modelo)||'—'}</td>
+                <td>${situacao}${r.conflito ? `<div class="text-muted" style="font-size:.75rem;">${escH(r.conflito)}</div>` : ''}</td>
+            `;
+            corpoPreview.appendChild(tr);
+        });
+
+        atualizarContagem();
+        // Eventos nos checkboxes individuais
+        document.querySelectorAll('.chk-linha').forEach(chk => {
+            chk.addEventListener('change', atualizarContagem);
+        });
+    }
+
+    function atualizarContagem() {
+        const total = document.querySelectorAll('.chk-linha:checked').length;
+        countSel.textContent = total;
+        btnConfirmar.disabled = (total === 0);
+    }
+
+    // ── Checkbox "selecionar todos" ──
+    checkAll.addEventListener('change', () => {
+        document.querySelectorAll('.chk-linha').forEach(c => c.checked = checkAll.checked);
+        atualizarContagem();
+    });
+
+    document.getElementById('btnSelecionarTodos').addEventListener('click', () => {
+        document.querySelectorAll('.chk-linha').forEach(c => c.checked = true);
+        checkAll.checked = true;
+        atualizarContagem();
+    });
+    document.getElementById('btnDeselecionarTodos').addEventListener('click', () => {
+        document.querySelectorAll('.chk-linha').forEach(c => c.checked = false);
+        checkAll.checked = false;
+        atualizarContagem();
+    });
+    document.getElementById('btnSoNovos').addEventListener('click', () => {
+        document.querySelectorAll('.chk-linha').forEach(c => {
+            const idx = parseInt(c.dataset.idx);
+            c.checked = !linhasData[idx].existe;
+        });
+        atualizarContagem();
+    });
+
+    document.getElementById('btnVoltarUpload').addEventListener('click', () => {
+        passo2.classList.add('d-none');
+        passo1.classList.remove('d-none');
+    });
+
+    // ── Confirmar importação ──
+    btnConfirmar.addEventListener('click', () => {
+        const checked = document.querySelectorAll('.chk-linha:checked');
+        const selecionados = Array.from(checked).map(c => linhasData[parseInt(c.dataset.idx)]);
+        const sobrescrever = switchSobre.checked;
+
+        btnConfirmar.disabled = true;
+        btnConfirmar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importando…';
+
+        fetch(CONFIRM_URL, {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ robots: selecionados, sobrescrever: sobrescrever })
+        })
+        .then(r => r.json())
+        .then(res => {
+            passo2.classList.add('d-none');
+            passo3.classList.remove('d-none');
+            renderizarResultado(res, selecionados.length);
+        })
+        .catch(err => {
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar Selecionados';
+            alert('Erro: ' + err);
+        });
+    });
+
+    function renderizarResultado(res, totalTentativa) {
+        const temErros = res.erros && res.erros.length > 0;
+        let html = '';
+
+        if(res.criados > 0 || res.atualizados > 0) {
+            html += `
+            <div class="text-center py-3">
+                <i class="bi bi-check-circle-fill text-success" style="font-size:3rem;"></i>
+                <h5 class="mt-3 fw-bold">Importação concluída!</h5>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-4 text-center">
+                    <div class="p-3 rounded-3 border">
+                        <div class="fs-2 fw-bold text-success">${res.criados}</div>
+                        <div class="text-muted small">Criado(s)</div>
+                    </div>
+                </div>
+                <div class="col-4 text-center">
+                    <div class="p-3 rounded-3 border">
+                        <div class="fs-2 fw-bold text-primary">${res.atualizados}</div>
+                        <div class="text-muted small">Atualizado(s)</div>
+                    </div>
+                </div>
+                <div class="col-4 text-center">
+                    <div class="p-3 rounded-3 border">
+                        <div class="fs-2 fw-bold text-secondary">${res.ignorados}</div>
+                        <div class="text-muted small">Ignorado(s)</div>
+                    </div>
+                </div>
+            </div>`;
+        } else {
+            html += `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>
+                Nenhum robô foi importado. Verifique se os registros já existem ou ative "Sobrescrever".
+            </div>`;
+        }
+
+        if(temErros) {
+            html += `<div class="alert alert-danger"><strong>Erros encontrados:</strong><ul class="mb-0 mt-1">`;
+            res.erros.forEach(e => { html += `<li>${escH(e)}</li>`; });
+            html += `</ul></div>`;
+        }
+
+        html += `<div class="d-flex gap-2">
+            <button class="btn btn-primary" onclick="window.location.reload()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Atualizar lista de robôs
+            </button>
+            <button class="btn btn-outline-secondary" onclick="reiniciarModal()">
+                <i class="bi bi-file-earmark-arrow-up me-1"></i>Importar outro arquivo
+            </button>
+        </div>`;
+
+        document.getElementById('resultadoImport').innerHTML = html;
+    }
+
+    // Resetar modal ao fechar
+    document.getElementById('modalImportar').addEventListener('hidden.bs.modal', reiniciarModal);
+
+    function reiniciarModal() {
+        passo1.classList.remove('d-none');
+        passo2.classList.add('d-none');
+        passo3.classList.add('d-none');
+        arquivoInput.value = '';
+        arquivoSelecionado = null;
+        arquivoInfo.classList.add('d-none');
+        erroUpload.classList.add('d-none');
+        loadingPreview.classList.add('d-none');
+        corpoPreview.innerHTML = '';
+        linhasData = [];
+        btnConfirmar.disabled = true;
+        btnConfirmar.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar Selecionados';
+        switchSobre.checked = false;
+    }
+
+    function mostrarErro(msg) {
+        erroUpload.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>' + msg;
+        erroUpload.classList.remove('d-none');
+    }
+
+    function escH(s) {
+        if(!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+})();
+</script>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}{{ ordem.numero_os }}{% endblock %}
+{% block page_title %}Ordem de Serviço{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center mb-4 gap-3">
+    <a href="{% url 'ordens_servico:list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+    <h4 class="mb-0 fw-bold"><i class="bi bi-clipboard-check me-2 text-info"></i>{{ ordem.numero_os }}</h4>
+    <span class="badge bg-{{ ordem.get_prioridade_color }}">{{ ordem.get_prioridade_display }}</span>
+    <span class="badge bg-{{ ordem.get_status_color }}">{{ ordem.get_status_display }}</span>
+    <div class="ms-auto d-flex gap-2">
+        {% if ordem.status == 'aberta' %}
+        <form method="post" action="{% url 'ordens_servico:iniciar' ordem.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-warning btn-sm"><i class="bi bi-play me-1"></i>Iniciar</button>
+        </form>
+        {% elif ordem.status == 'em_andamento' %}
+        <a href="{% url 'ordens_servico:concluir' ordem.pk %}" class="btn btn-success btn-sm"><i class="bi bi-check2 me-1"></i>Concluir</a>
+        {% endif %}
+        <a href="{% url 'ordens_servico:update' ordem.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Editar</a>
+        {% if ordem.status not in 'concluida,cancelada' %}
+        <form method="post" action="{% url 'ordens_servico:cancelar' ordem.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Cancelar esta OS?')"><i class="bi bi-x me-1"></i>Cancelar</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>Detalhes</div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-4 text-muted">Robô</dt>
+                    <dd class="col-8"><a href="{% url 'robots:detail' ordem.robo.pk %}">{{ ordem.robo.nome }}</a></dd>
+                    <dt class="col-4 text-muted">Técnico</dt>
+                    <dd class="col-8">{{ ordem.tecnico.nome|default:"Não atribuído" }}</dd>
+                    <dt class="col-4 text-muted">Abertura</dt>
+                    <dd class="col-8">{{ ordem.data_abertura|date:"d/m/Y H:i" }}</dd>
+                    {% if ordem.data_inicio %}
+                    <dt class="col-4 text-muted">Início</dt>
+                    <dd class="col-8">{{ ordem.data_inicio|date:"d/m/Y H:i" }}</dd>
+                    {% endif %}
+                    {% if ordem.data_conclusao %}
+                    <dt class="col-4 text-muted">Conclusão</dt>
+                    <dd class="col-8">{{ ordem.data_conclusao|date:"d/m/Y H:i" }}</dd>
+                    {% endif %}
+                </dl>
+                <hr>
+                <p class="fw-medium mb-1">Descrição do Problema:</p>
+                <p class="text-muted">{{ ordem.descricao_problema }}</p>
+                {% if ordem.solucao %}
+                <p class="fw-medium mb-1">Solução Aplicada:</p>
+                <p class="text-muted">{{ ordem.solucao }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

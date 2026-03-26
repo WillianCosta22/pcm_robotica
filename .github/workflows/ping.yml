@@ -1,0 +1,16 @@
+name: Keep Render Awake
+
+on:
+  schedule:
+    - cron: "*/8 * * * *"  # a cada 8 minutos
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping site
+        run: |
+          echo "🔄 Pinging..."
+          curl -I https://pcm-robotica.onrender.com/usuarios/login/

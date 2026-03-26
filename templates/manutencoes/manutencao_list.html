@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Manutenções{% endblock %}
+{% block page_title %}Manutenções{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0 fw-bold"><i class="bi bi-tools me-2 text-warning"></i>
+        {% if request.user.is_staff or request.user.is_superuser %}
+            PCM - Todas as Manutenções
+        {% else %}
+            Minhas Manutenções
+        {% endif %}
+    </h4>
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <a href="{% url 'manutencoes:create' %}" class="btn btn-warning text-dark">
+        <i class="bi bi-plus-circle me-1"></i>Abrir Manutenção
+    </a>
+    {% endif %}
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <input type="text" name="busca" class="form-control" placeholder="Buscar robô ou descrição..." value="{{ request.GET.busca }}">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">Todos os status</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="tipo" class="form-select">
+                    <option value="">Todos os tipos</option>
+                    {% for value, label in tipo_choices %}
+                    <option value="{{ value }}" {% if request.GET.tipo == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i></button>
+                <a href="{% url 'manutencoes:list' %}" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Robô</th>
+                        <th>Tipo</th>
+                        <th>Técnico</th>
+                        <th>Abertura</th>
+                        <th>Status</th>
+                        <th>Custo</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for m in manutencoes %}
+                <tr>
+                    <td class="text-muted">#{{ m.pk }}</td>
+                    <td>
+                        <a href="{% url 'robots:detail' m.robo.pk %}" class="text-decoration-none fw-medium">
+                            {{ m.robo.nome }}
+                        </a>
+                        {% if m.robo.patrimonio %}<div class="text-muted small">{{ m.robo.patrimonio }}</div>{% endif %}
+                    </td>
+                    <td><span class="badge bg-secondary">{{ m.get_tipo_manutencao_display }}</span></td>
+                    <td>{{ m.tecnico.nome|default:"<span class='text-muted'>—</span>" }}</td>
+                    <td class="small">{{ m.data_abertura|date:"d/m/Y H:i" }}</td>
+                    <td><span class="badge bg-{{ m.get_status_color }}">{{ m.get_status_display }}</span></td>
+                    <td>
+                        {% if m.custo %}<span class="text-success fw-medium">R$ {{ m.custo|floatformat:2 }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'manutencoes:detail' m.pk %}" class="btn btn-outline-primary" title="Ver">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if m.status == 'aberta' %}
+                            <a href="{% url 'manutencoes:iniciar' m.pk %}" class="btn btn-outline-warning" title="Iniciar">
+                                <i class="bi bi-play"></i>
+                            </a>
+                            {% elif m.status == 'em_execucao' %}
+                            <a href="{% url 'manutencoes:concluir' m.pk %}" class="btn btn-outline-success" title="Concluir">
+                                <i class="bi bi-check2"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="bi bi-tools fs-1 d-block mb-2 opacity-25"></i>
+                        Nenhuma manutenção encontrada.
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if is_paginated %}
+<nav class="mt-3">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}"><i class="bi bi-chevron-left"></i></a></li>{% endif %}
+        <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}"><i class="bi bi-chevron-right"></i></a></li>{% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
