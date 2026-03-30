@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Manutenção #{{ manutencao.pk }}{% endblock %}
+{% block page_title %}Detalhes da Manutenção{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4 gap-3 flex-wrap">
+    <a href="{% url 'manutencoes:list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+    <h4 class="mb-0 fw-bold">Manutenção #{{ manutencao.pk }}</h4>
+    <span class="badge bg-{{ manutencao.get_status_color }} fs-6">{{ manutencao.get_status_display }}</span>
+    <div class="ms-auto d-flex gap-2 flex-wrap">
+        {% if manutencao.status == 'aberta' %}
+        <a href="{% url 'manutencoes:iniciar' manutencao.pk %}" class="btn btn-warning btn-sm">
+            <i class="bi bi-play me-1"></i>Iniciar Execução
+        </a>
+        {% elif manutencao.status == 'em_execucao' %}
+        <a href="{% url 'manutencoes:concluir' manutencao.pk %}" class="btn btn-success btn-sm">
+            <i class="bi bi-check2 me-1"></i>Concluir
+        </a>
+        {% endif %}
+        {% if request.user.is_staff or request.user.is_superuser %}
+        {% if manutencao.status != 'concluida' and manutencao.status != 'cancelada' %}
+        <form method="post" action="{% url 'manutencoes:cancelar' manutencao.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Cancelar manutenção?')">
+                <i class="bi bi-x me-1"></i>Cancelar
+            </button>
+        </form>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>Informações</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-4 text-muted">Robô</dt>
+                    <dd class="col-8"><a href="{% url 'robots:detail' manutencao.robo.pk %}">{{ manutencao.robo.nome }}</a></dd>
+                    <dt class="col-4 text-muted">Tipo</dt>
+                    <dd class="col-8"><span class="badge bg-secondary">{{ manutencao.get_tipo_manutencao_display }}</span></dd>
+                    <dt class="col-4 text-muted">Técnico</dt>
+                    <dd class="col-8">{{ manutencao.tecnico.nome|default:"Não atribuído" }}</dd>
+                    <dt class="col-4 text-muted">Abertura</dt>
+                    <dd class="col-8">{{ manutencao.data_abertura|date:"d/m/Y H:i" }}</dd>
+                    {% if manutencao.data_execucao %}
+                    <dt class="col-4 text-muted">Início</dt>
+                    <dd class="col-8">{{ manutencao.data_execucao|date:"d/m/Y H:i" }}</dd>
+                    {% endif %}
+                    {% if manutencao.data_conclusao %}
+                    <dt class="col-4 text-muted">Conclusão</dt>
+                    <dd class="col-8">{{ manutencao.data_conclusao|date:"d/m/Y H:i" }}</dd>
+                    {% endif %}
+                    {% if manutencao.custo %}
+                    <dt class="col-4 text-muted">Custo</dt>
+                    <dd class="col-8 text-success fw-bold">R$ {{ manutencao.custo|floatformat:2 }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-text-paragraph me-2"></i>Descrição</div>
+            <div class="card-body text-muted">{{ manutencao.descricao }}</div>
+        </div>
+
+        {% if manutencao.pecas_substituidas %}
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-tools me-2"></i>Peças Substituídas</div>
+            <div class="card-body text-muted">{{ manutencao.pecas_substituidas }}</div>
+        </div>
+        {% endif %}
+
+        {% if manutencao.observacoes_conclusao %}
+        <div class="card">
+            <div class="card-header"><i class="bi bi-check2-all me-2 text-success"></i>Observações de Conclusão</div>
+            <div class="card-body text-muted">{{ manutencao.observacoes_conclusao }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        {% if manutencao.imagem_manutencao %}
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-image me-2"></i>Foto</div>
+            <div class="card-body p-2">
+                <img src="{{ manutencao.imagem_manutencao.url }}" class="img-fluid rounded">
+            </div>
+        </div>
+        {% endif %}
+        {% if manutencao.relatorio %}
+        <div class="card">
+            <div class="card-body">
+                <a href="{{ manutencao.relatorio.url }}" class="btn btn-outline-secondary w-100" target="_blank">
+                    <i class="bi bi-file-earmark-text me-1"></i>Ver Relatório
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

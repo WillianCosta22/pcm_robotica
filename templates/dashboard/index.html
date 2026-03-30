@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kpi-card {
+        border-radius: 14px; padding: 20px; color: #fff;
+        position: relative; overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+        text-decoration: none; display: block;
+    }
+    .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); color: #fff; }
+    .kpi-card .kpi-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 3rem; opacity: 0.2; }
+    .kpi-card .kpi-value { font-size: 2.2rem; font-weight: 700; line-height: 1; }
+    .kpi-card .kpi-label { font-size: 0.8rem; opacity: 0.85; margin-top: 4px; }
+    .kpi-card .kpi-arrow { position: absolute; bottom: 12px; right: 15px; font-size: 0.75rem; opacity: 0.7; }
+    .chart-container { position: relative; height: 260px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 fw-bold">Painel de Controle</h4>
+        <p class="text-muted mb-0 small">Bem-vindo, {{ request.user.get_full_name|default:request.user.username }}!</p>
+    </div>
+    <span class="text-muted small" id="current-date"></span>
+</div>
+
+<!-- ── KPI Cards — Robôs (clicáveis com filtro) ── -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md">
+        <a href="{% url 'robots:list' %}" class="kpi-card" style="background: linear-gradient(135deg,#0d6efd,#0099cc);">
+            <div class="kpi-icon"><i class="bi bi-robot"></i></div>
+            <div class="kpi-value">{{ total_robots }}</div>
+            <div class="kpi-label">Total de Robôs</div>
+            <div class="kpi-arrow"><i class="bi bi-arrow-right-circle"></i> Ver todos</div>
+        </a>
+    </div>
+    <div class="col-6 col-md">
+        <a href="{% url 'robots:list' %}?status=operacional" class="kpi-card" style="background: linear-gradient(135deg,#198754,#0fba70);">
+            <div class="kpi-icon"><i class="bi bi-check-circle"></i></div>
+            <div class="kpi-value">{{ robots_operacionais }}</div>
+            <div class="kpi-label">Operacionais</div>
+            <div class="kpi-arrow"><i class="bi bi-arrow-right-circle"></i> Filtrar</div>
+        </a>
+    </div>
+    <div class="col-6 col-md">
+        <a href="{% url 'robots:list' %}?status=em_manutencao" class="kpi-card" style="background: linear-gradient(135deg,#ffc107,#e0a800); color:#333 !important;">
+            <div class="kpi-icon"><i class="bi bi-wrench"></i></div>
+            <div class="kpi-value">{{ robots_manutencao }}</div>
+            <div class="kpi-label" style="color:#333;">Em Manutenção</div>
+            <div class="kpi-arrow" style="color:#333;"><i class="bi bi-arrow-right-circle"></i> Filtrar</div>
+        </a>
+    </div>
+    <div class="col-6 col-md">
+        <a href="{% url 'robots:list' %}?status=parado" class="kpi-card" style="background: linear-gradient(135deg,#dc3545,#c0392b);">
+            <div class="kpi-icon"><i class="bi bi-pause-circle"></i></div>
+            <div class="kpi-value">{{ robots_parados }}</div>
+            <div class="kpi-label">Parados</div>
+            <div class="kpi-arrow"><i class="bi bi-arrow-right-circle"></i> Filtrar</div>
+        </a>
+    </div>
+    <div class="col-6 col-md">
+        <a href="{% url 'robots:list' %}?status=inativo" class="kpi-card" style="background: linear-gradient(135deg,#6c757d,#495057);">
+            <div class="kpi-icon"><i class="bi bi-x-circle"></i></div>
+            <div class="kpi-value">{{ robots_inativos }}</div>
+            <div class="kpi-label">Inativos</div>
+            <div class="kpi-arrow"><i class="bi bi-arrow-right-circle"></i> Filtrar</div>
+        </a>
+    </div>
+</div>
+
+<!-- ── Indicadores de manutenção ── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <div class="text-primary fs-2 fw-bold">{{ manutencoes_abertas }}</div>
+            <div class="text-muted small">Manutenções Abertas</div>
+            <a href="{% url 'manutencoes:list' %}?status=aberta" class="btn btn-sm btn-outline-primary mt-2">Ver</a>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <div class="text-warning fs-2 fw-bold">{{ manutencoes_em_execucao }}</div>
+            <div class="text-muted small">Em Execução</div>
+            <a href="{% url 'manutencoes:list' %}?status=em_execucao" class="btn btn-sm btn-outline-warning mt-2">Ver</a>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <div class="text-success fs-2 fw-bold">{{ total_tecnicos }}</div>
+            <div class="text-muted small">Técnicos Ativos</div>
+            {% if request.user.is_staff or request.user.is_superuser %}
+            <a href="{% url 'tecnicos:list' %}" class="btn btn-sm btn-outline-success mt-2">Ver</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ── Gráficos ── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="bi bi-bar-chart-line text-primary"></i>Manutenções por Mês
+            </div>
+            <div class="card-body">
+                <div class="chart-container"><canvas id="chartManutencoes"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="bi bi-pie-chart text-info"></i>Status dos Robôs
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <div class="chart-container w-100"><canvas id="chartStatus"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-currency-dollar text-success me-2"></i>Custos de Manutenção por Mês (R$)</div>
+            <div class="card-body">
+                <div class="chart-container" style="height:200px"><canvas id="chartCustos"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Últimas Manutenções ── -->
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-tools me-2 text-warning"></i>Últimas Manutenções</span>
+        <div class="d-flex gap-2">
+            <a href="{% url 'manutencoes:create' %}" class="btn btn-sm btn-warning text-dark"><i class="bi bi-plus"></i>Nova</a>
+            <a href="{% url 'manutencoes:list' %}" class="btn btn-sm btn-outline-primary">Ver todas</a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Robô</th><th>Tipo</th><th>Técnico</th><th>Abertura</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for m in ultimas_manutencoes %}
+            <tr>
+                <td><a href="{% url 'manutencoes:detail' m.pk %}" class="text-decoration-none fw-medium">{{ m.robo.nome }}</a></td>
+                <td><span class="badge bg-secondary">{{ m.get_tipo_manutencao_display }}</span></td>
+                <td>{{ m.tecnico.nome|default:"—" }}</td>
+                <td class="small text-muted">{{ m.data_abertura|date:"d/m/Y" }}</td>
+                <td><span class="badge bg-{{ m.get_status_color }}">{{ m.get_status_display }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-3">Nenhuma manutenção registrada</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if request.user.is_staff or request.user.is_superuser %}
+<div class="card">
+    <div class="card-header"><i class="bi bi-lightning me-2 text-warning"></i>Ações Rápidas</div>
+    <div class="card-body d-flex flex-wrap gap-2">
+        <a href="{% url 'robots:create' %}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Novo Robô</a>
+        <a href="{% url 'manutencoes:create' %}" class="btn btn-warning text-dark"><i class="bi bi-tools me-1"></i>Abrir Manutenção</a>
+        <a href="{% url 'tecnicos:create' %}" class="btn btn-success"><i class="bi bi-person-plus me-1"></i>Novo Técnico</a>
+        <a href="{% url 'robots:export_excel' %}" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    document.getElementById('current-date').textContent = new Date().toLocaleDateString('pt-BR', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    Chart.defaults.font.family = 'Inter';
+    Chart.defaults.color = '#6c757d';
+
+    new Chart(document.getElementById('chartManutencoes'), {
+        type: 'bar',
+        data: {
+            labels: {{ chart_manutencoes_labels|safe }},
+            datasets: [{ label: 'Manutenções', data: {{ chart_manutencoes_data|safe }},
+                backgroundColor: 'rgba(13,110,253,0.7)', borderColor: '#0d6efd',
+                borderWidth: 1, borderRadius: 6 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+
+    new Chart(document.getElementById('chartStatus'), {
+        type: 'doughnut',
+        data: {
+            labels: {{ chart_status_labels|safe }},
+            datasets: [{ data: {{ chart_status_data|safe }},
+                backgroundColor: ['#198754','#ffc107','#dc3545','#0dcaf0','#6c757d'],
+                borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { padding: 10, font: { size: 11 } } } },
+            cutout: '65%' }
+    });
+
+    new Chart(document.getElementById('chartCustos'), {
+        type: 'line',
+        data: {
+            labels: {{ chart_custo_labels|safe }},
+            datasets: [{ label: 'Custo (R$)', data: {{ chart_custo_data|safe }},
+                borderColor: '#198754', backgroundColor: 'rgba(25,135,84,0.1)',
+                borderWidth: 2, fill: true, tension: 0.4, pointBackgroundColor: '#198754' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR') } } } }
+    });
+</script>
+{% endblock %}
