@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center mb-4 gap-3">
+    <a href="{% url 'tecnicos:list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+    <h4 class="mb-0 fw-bold"><i class="bi bi-person-gear me-2 text-success"></i>{{ titulo }}</h4>
+</div>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <form method="post">
+            {% csrf_token %}
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-person me-2"></i>Dados do Técnico</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-medium">Nome Completo *</label>
+                            {{ form.nome }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">Matrícula</label>
+                            {{ form.matricula }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">E-mail</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">Telefone</label>
+                            {{ form.telefone }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Especialidade</label>
+                            {{ form.especialidade }}
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check">
+                                {{ form.ativo }}
+                                <label class="form-check-label" for="{{ form.ativo.id_for_label }}">Técnico Ativo</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-key me-2 text-warning"></i>Acesso ao Portal</div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">Crie um login para que este técnico possa acessar o sistema. Deixe em branco para não criar acesso.</p>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">Usuário de login</label>
+                            {{ form.username }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">Senha</label>
+                            {{ form.password }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">Confirmar Senha</label>
+                            {{ form.password2 }}
+                        </div>
+                    </div>
+                    {% if object and object.usuario %}
+                    <div class="alert alert-info py-2 mt-2 small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Usuário de acesso já criado: <strong>{{ object.usuario.username }}</strong>. 
+                        Preencha a senha apenas se quiser alterá-la.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                {% for f, errors in form.errors.items %}{% for e in errors %}<div><strong>{{ f }}:</strong> {{ e }}</div>{% endfor %}{% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success"><i class="bi bi-check2 me-1"></i>Salvar</button>
+                <a href="{% url 'tecnicos:list' %}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

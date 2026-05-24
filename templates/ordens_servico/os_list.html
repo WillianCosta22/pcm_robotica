@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Ordens de Serviço{% endblock %}
+{% block page_title %}Ordens de Serviço{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0 fw-bold"><i class="bi bi-clipboard-check me-2 text-info"></i>Ordens de Serviço</h4>
+    <a href="{% url 'ordens_servico:create' %}" class="btn btn-info text-white">
+        <i class="bi bi-plus-circle me-1"></i>Nova OS
+    </a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <input type="text" name="busca" class="form-control" placeholder="Buscar OS, robô..." value="{{ request.GET.busca }}">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">Todos os status</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="prioridade" class="form-select">
+                    <option value="">Todas as prioridades</option>
+                    {% for value, label in prioridade_choices %}
+                    <option value="{{ value }}" {% if request.GET.prioridade == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i></button>
+                <a href="{% url 'ordens_servico:list' %}" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nº OS</th>
+                        <th>Robô</th>
+                        <th>Técnico</th>
+                        <th>Prioridade</th>
+                        <th>Abertura</th>
+                        <th>Status</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for os in ordens %}
+                <tr>
+                    <td><code class="text-info fw-medium">{{ os.numero_os }}</code></td>
+                    <td>
+                        <a href="{% url 'robots:detail' os.robo.pk %}" class="text-decoration-none fw-medium">
+                            {{ os.robo.nome }}
+                        </a>
+                    </td>
+                    <td>{{ os.tecnico.nome|default:"<span class='text-muted'>—</span>" }}</td>
+                    <td>
+                        <span class="badge bg-{{ os.get_prioridade_color }}">
+                            {{ os.get_prioridade_display }}
+                        </span>
+                    </td>
+                    <td>{{ os.data_abertura|date:"d/m/Y H:i" }}</td>
+                    <td><span class="badge bg-{{ os.get_status_color }}">{{ os.get_status_display }}</span></td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'ordens_servico:detail' os.pk %}" class="btn btn-outline-primary" title="Ver">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if os.status == 'aberta' %}
+                            <form method="post" action="{% url 'ordens_servico:iniciar' os.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-warning" title="Iniciar">
+                                    <i class="bi bi-play"></i>
+                                </button>
+                            </form>
+                            {% elif os.status == 'em_andamento' %}
+                            <a href="{% url 'ordens_servico:concluir' os.pk %}" class="btn btn-outline-success" title="Concluir">
+                                <i class="bi bi-check2"></i>
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'ordens_servico:update' os.pk %}" class="btn btn-outline-secondary" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="bi bi-clipboard-x fs-1 d-block mb-2 opacity-25"></i>
+                        Nenhuma ordem de serviço encontrada.
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if is_paginated %}
+<nav class="mt-3">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}"><i class="bi bi-chevron-left"></i></a></li>{% endif %}
+        <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}"><i class="bi bi-chevron-right"></i></a></li>{% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
